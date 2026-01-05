@@ -1,0 +1,38 @@
+// Prisma schema for URL shortener
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Url {
+  id          String    @id @default(uuid())
+  shortCode   String    @unique @db.VarChar(10)
+  originalUrl String    @db.VarChar(2048)
+  clickCount  Int       @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  clicks      Click[]
+
+  @@index([shortCode])
+  @@map("urls")
+}
+
+model Click {
+  id        String   @id @default(uuid())
+  urlId     String
+  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  userAgent String?
+  referer   String?
+  ipAddress String?  @db.VarChar(45)
+  clickedAt DateTime @default(now())
+
+  @@index([urlId])
+  @@index([clickedAt])
+  @@map("clicks")
+}
