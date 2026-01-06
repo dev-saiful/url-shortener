@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
+import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import configuration from './config/configuration.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UrlModule } from './url/url.module.js';
@@ -28,6 +31,37 @@ import { AdminModule } from './admin/admin.module.js';
           ttl: config.get<number>('throttle.ttl', 60) * 1000,
           limit: config.get<number>('throttle.limit', 100),
         },
+      ],
+    }),
+
+    // Winston Logging
+    WinstonModule.forRoot({
+      transports: [
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.ms(),
+            nestWinstonModuleUtilities.format.nestLike('Shortener', {
+              prettyPrint: true,
+              colors: true,
+            }),
+          ),
+        }),
+        new winston.transports.File({
+          filename: 'logs/error.log',
+          level: 'error',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+        }),
+        new winston.transports.File({
+          filename: 'logs/combined.log',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+        }),
       ],
     }),
 
