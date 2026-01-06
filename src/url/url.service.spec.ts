@@ -27,6 +27,7 @@ describe('UrlService', () => {
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+        findMany: jest.fn(),
       },
       click: {
         create: jest.fn(),
@@ -165,6 +166,67 @@ describe('UrlService', () => {
       (prismaService.url.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.delete('notfound')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('trackClick', () => {
+    it('should increment click count and create click record', async () => {
+      (prismaService.url.findUnique as jest.Mock).mockResolvedValue(mockUrl);
+      (prismaService.url.update as jest.Mock).mockResolvedValue({
+        ...mockUrl,
+        clickCount: mockUrl.clickCount + 1,
+      });
+      (prismaService.click.create as jest.Mock).mockResolvedValue({
+        id: 'click-123',
+        urlId: mockUrl.id,
+      });
+
+      await service.trackClick('abc123', {
+        userAgent: 'Mozilla',
+        referer: 'google.com',
+        ipAddress: '127.0.0.1',
+      });
+
+      expect(prismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should silently fail if URL not found', async () => {
+      (prismaService.url.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await service.trackClick('notfound', {});
+
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findByUser', () => {
+    it('should return URLs for specific user', async () => {
+      const userUrls = [mockUrl, { ...mockUrl, shortCode: 'xyz789' }];
+      (prismaService.url.findMany as jest.Mock).mockResolvedValue(userUrls);
+
+      const result = await service.findByUser('user-123');
+
+      expect(result).toHaveLength(2);
+      expect(result[0].shortCode).toBe('abc123');
+      expect(prismaService.url.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: 'user-123' } }),
+      );
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return all URLs with user info', async () => {
+      const allUrls = [
+        { ...mockUrl, user: { id: 'u1', email: 'e1', name: 'n1' } },
+        { ...mockUrl, shortCode: 'xyz', user: { id: 'u2', email: 'e2', name: 'n2' } },
+      ];
+      (prismaService.url.findMany as jest.Mock).mockResolvedValue(allUrls);
+
+      const result = await service.findAll({});
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveProperty('user');
+      expect(prismaService.url.findMany).toHaveBeenCalled();
     });
   });
 });
