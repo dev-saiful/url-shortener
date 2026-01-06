@@ -24,7 +24,7 @@ export class UrlService {
     this.baseUrl = this.configService.get<string>('baseUrl') || 'http://localhost:3000';
   }
 
-  async create(dto: CreateUrlDto): Promise<UrlResponseDto> {
+  async create(dto: CreateUrlDto, userId?: string): Promise<UrlResponseDto> {
     const shortCode = dto.customCode || nanoid(7);
 
     // Check if custom code already exists
@@ -44,12 +44,17 @@ export class UrlService {
       if (expiresAt <= new Date()) {
         throw new BadRequestException('Expiration date must be in the future');
       }
+    } else if (!userId) {
+      // Anonymous URLs: auto-expire in 24 hours
+      expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
     }
 
     const url = await this.prisma.url.create({
       data: {
         shortCode,
         originalUrl: dto.originalUrl,
+        userId,
         expiresAt,
       },
     });
@@ -159,7 +164,7 @@ export class UrlService {
     ]);
   }
 
-  async delete(shortCode: string): Promise<void> {
+  async delete(shortCode: string, userId?: string, isAdmin: boolean = false): Promise<void> {
     const url = await this.prisma.url.findUnique({
       where: { shortCode },
     });
@@ -168,12 +173,51 @@ export class UrlService {
       throw new NotFoundException(`Short URL "${shortCode}" not found`);
     }
 
+    // Check ownership (unless admin)
+    if (!isAdmin && url.userId && url.userId !== userId) {
+      throw new BadRequestException('You can only delete your own URLs');
+    }
+
     await this.prisma.url.delete({
       where: { shortCode },
     });
 
     // Invalidate cache
     await this.cacheManager.del(`url:${shortCode}`);
+  }
+
+  async findByUser(userId: string): Promise<UrlResponseDto[]> {
+    const urls = await this.prisma.url.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return urls.map(url => this.toResponseDto(url));
+  }
+
+  // ===== Admin Methods =====
+
+  async findAll(options?: { skip?: number; take?: number; userId?: string }) {
+    const urls = await this.prisma.url.findMany({
+      where: options?.userId ? { userId: options.userId } : undefined,
+      skip: options?.skip,
+      take: options?.take,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return urls.map(url => ({
+      ...this.toResponseDto(url),
+      user: url.user,
+    }));
   }
 
   private toResponseDto(url: {

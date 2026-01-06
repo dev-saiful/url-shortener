@@ -32,8 +32,11 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('URL Shortener API')
-    .setDescription('A production-ready URL shortener service')
+    .setDescription('A production-ready URL shortener service with authentication')
     .setVersion('1.0')
+    .addBearerAuth()
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('user', 'User profile management')
     .addTag('urls', 'URL shortening operations')
     .addTag('health', 'Health check endpoints')
     .build();

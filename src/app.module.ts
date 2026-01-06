@@ -7,6 +7,9 @@ import configuration from './config/configuration.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UrlModule } from './url/url.module.js';
 import { HealthModule } from './health/health.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UserModule } from './user/user.module.js';
+import { AdminModule } from './admin/admin.module.js';
 
 @Module({
   imports: [
@@ -57,8 +60,11 @@ import { HealthModule } from './health/health.module.js';
     PrismaModule,
 
     // Feature modules
+    AuthModule,
+    UserModule,
     UrlModule,
     HealthModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
