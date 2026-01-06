@@ -62,8 +62,8 @@ import { AdminModule } from './admin/admin.module.js';
     // Feature modules
     AuthModule,
     UserModule,
-    UrlModule,
     HealthModule,
+    UrlModule,
     AdminModule,
   ],
 })
