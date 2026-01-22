@@ -2,6 +2,11 @@ datasource db {
   provider = "postgresql"
 }
 
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
 enum Role {
   USER
   ADMIN
