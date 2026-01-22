@@ -65,7 +65,7 @@ import { AdminModule } from './admin/admin.module.js';
       ],
     }),
 
-    // Redis caching
+    // Redis caching (Cloud Redis)
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
@@ -73,18 +73,23 @@ import { AdminModule } from './admin/admin.module.js';
       useFactory: async (config: ConfigService) => {
         const redisHost = config.get<string>('redis.host', 'localhost');
         const redisPort = config.get<number>('redis.port', 6379);
-        
+        const redisUsername = config.get<string>('redis.username');
+        const redisPassword = config.get<string>('redis.password');
+
         try {
           const store = await redisStore({
+            username: redisUsername,
+            password: redisPassword,
             socket: {
               host: redisHost,
               port: redisPort,
             },
           });
+          console.log('Connected to Redis successfully');
           return { store };
-        } catch {
+        } catch (error) {
           // Fallback to in-memory cache if Redis is unavailable
-          console.warn('Redis unavailable, using in-memory cache');
+          console.warn('Redis unavailable, using in-memory cache:', error);
           return { ttl: 3600000 };
         }
       },
