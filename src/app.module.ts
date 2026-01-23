@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { SchedulerModule } from './scheduler/scheduler.module.js';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { AdminModule } from './admin/admin.module.js';
     HealthModule,
     UrlModule,
     AdminModule,
+    SchedulerModule,
   ],
 })
 export class AppModule {}

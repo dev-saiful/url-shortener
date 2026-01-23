@@ -14,4 +14,9 @@ export default () => ({
     ttl: parseInt(process.env.THROTTLE_TTL || '60', 10),
     limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
   },
+  scheduler: {
+    enabled: process.env.SCHEDULER_ENABLED !== 'false',
+    healthCheckUrl: process.env.SCHEDULER_HEALTH_CHECK_URL || 'http://localhost:3000/health',
+    healthCheckIntervalMinutes: parseInt(process.env.SCHEDULER_HEALTH_CHECK_INTERVAL || '14', 10),
+  },
 });
